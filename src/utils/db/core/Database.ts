@@ -14,6 +14,11 @@ class Database {
     model: T,
     data: Record<string, any>
   ) {
+    const preExist = await this.read(model, data);
+    if (preExist.length > 0) {
+      return "That record already exists.";
+
+    }
     const result = await Create(this.connection, model, data);
     return result;
   }

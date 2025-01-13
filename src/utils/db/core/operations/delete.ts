@@ -1,15 +1,14 @@
 import { Connection } from "mysql2/promise";
 import QueryBuilder from "../query";
+import { BaseModel } from "../types";
 
-export async function Delete<T>(
+export async function Delete(
   connection: Connection,
-  model: { new (): T },
+  model: BaseModel,
   conditions: Record<string, any>
 ) {
   const queryBuilder = new QueryBuilder();
-  const query = queryBuilder
-    .deleteFrom(model.prototype.tableName, conditions)
-    .getQuery();
+  const query = queryBuilder.deleteFrom(model.tableName, conditions).getQuery();
   const [result] = await connection.execute(query);
   return result;
 }

@@ -4,7 +4,7 @@ import { Tokeniser } from "@/utils/core/auth/token/Generator";
 import Database from "@/utils/db/core/Database";
 import { UserModel, UserType } from "@/utils/db/core/types/User.model";
 type Data = {
-  status: string;
+  code: string;
   message: string;
   data: {
     user: {
@@ -15,7 +15,7 @@ type Data = {
         refreshToken: string;
       };
     };
-  };
+  } | null | undefined;
 };
 const toMySQLTimestamp = (date: Date): string => {
   return date.toISOString().slice(0, 19).replace("T", " ");
@@ -37,11 +37,19 @@ export default async function handler(
     status: "online",
     createdAt: toMySQLTimestamp(new Date()),
   };
-
-  console.log(UserModel.prototype.tableName);
-  const userData = await (
-    await Database.init()
-  ).create(new UserModel(), payload);
+  let userData;
+  try {
+    userData = await (
+      await Database.init()
+    ).create(new UserModel(), payload);
+  } catch (error) {
+    
+    return res.status(500).json({
+      code: "failure",
+      message: "Internal Server Error",
+      data: null,
+    });
+  }
 
   const tokens = await Tokeniser.generateBatch(payload);
   const data = {
@@ -55,7 +63,7 @@ export default async function handler(
     },
   };
   res.status(200).json({
-    status: "success",
+    code: "success",
     message: `Successfully created a User and tokens.`,
     data,
   });
