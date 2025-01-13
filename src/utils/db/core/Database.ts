@@ -1,7 +1,7 @@
+import { QueryResult } from "mysql2/promise";
 import createConnection from "./connection";
 import { Create, Read, Update, Delete } from "./operations";
 import { BaseModel } from "./types";
-
 class Database {
   private static connection: any;
 
@@ -14,13 +14,31 @@ class Database {
     model: T,
     data: Record<string, any>
   ) {
-    const preExist = await this.read(model, data);
-    if (preExist.length > 0) {
-      return "That record already exists.";
+    if (model.tableName === "users") {
+      const checks: {[key: string]: any} = {
+        email: data.email,
+        username: data.username,
+      };
+      let checkResult: QueryResult[] = [];
+      for (let key in checks) {
+        const check = await this.read(model, { [key]: checks[key] });
+        checkResult.push(check);
+      }
 
+      if (checkResult[0].length > 0) {
+        return "Email already in use";
+      } else if (checkResult[1].length > 0) {
+        return "Username already in use";
+      }
+
+      const result = await Create(this.connection, model, data);
+      const postExist: QueryResult = await this.read(model, data.email);
+      console.log(postExist);
+      return result;
+    } else {
+      const result = await Create(this.connection, model, data);
+      return result;
     }
-    const result = await Create(this.connection, model, data);
-    return result;
   }
 
   static async read<T extends BaseModel>(
