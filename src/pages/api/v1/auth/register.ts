@@ -42,8 +42,14 @@ export default async function handler(
     userData = await (
       await Database.init()
     ).create(new UserModel(), payload);
+    if (typeof userData === "string") {
+      return res.status(400).json({
+        code: "failure",
+        message: userData,
+        data: null,
+      });
+    }
   } catch (error) {
-    
     return res.status(500).json({
       code: "failure",
       message: "Internal Server Error",

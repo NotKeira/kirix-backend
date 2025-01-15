@@ -12,6 +12,12 @@ export async function Create(
   }
   const queryBuilder = new QueryBuilder();
   const query = queryBuilder.insertInto(model.tableName, data).getQuery();
-  const [result] = await connection.execute(query);
+  let result;
+  try {
+    [result] = await connection.execute(query);
   return result;
+  } catch (error) {
+    console.log(error);
+  }
+  
 }

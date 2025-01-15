@@ -13,33 +13,34 @@ class Database {
   static async create<T extends BaseModel>(
     model: T,
     data: Record<string, any>
-  ) {
+  ): Promise<QueryResult | string | undefined> {
     if (model.tableName === "users") {
-      const checks: {[key: string]: any} = {
+      const checks: { [key: string]: any } = {
         email: data.email,
         username: data.username,
       };
-      let checkResult: QueryResult[] = [];
+      let duplicateFields: string[] = [];
       for (let key in checks) {
-        const check = await this.read(model, { [key]: checks[key] });
-        checkResult.push(check);
+        const check = await this.read(model, { [key]: checks[key]});
+        if (Array.isArray(check) && check.length > 0) {
+          duplicateFields.push(key);}
       }
+      if (duplicateFields.length > 0) {
+        console.log("Preventing duplicate user creation...");
 
-      if (checkResult[0].length > 0) {
-        return "Email already in use";
-      } else if (checkResult[1].length > 0) {
-        return "Username already in use";
+        return `Error: Duplicate ${duplicateFields.join(", ")} found.`;
+      } else {
+        console.log("Creating user...");
+        const result = await Create(this.connection, model, data);
+        const postExist: QueryResult = await this.read(model, data.email);
+        return result;
       }
-
-      const result = await Create(this.connection, model, data);
-      const postExist: QueryResult = await this.read(model, data.email);
-      console.log(postExist);
-      return result;
     } else {
       const result = await Create(this.connection, model, data);
       return result;
     }
   }
+  // hello
 
   static async read<T extends BaseModel>(
     model: T,
