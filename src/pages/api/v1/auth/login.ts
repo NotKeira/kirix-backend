@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { Snowflake } from "nodejs-snowflake";
 import { Tokeniser } from "@/utils/core/auth/token/Generator";
 import Database from "@/utils/db/core/Database";
 import { UserModel, UserType } from "@/utils/db/core/types/User.model";
@@ -10,8 +9,6 @@ type Data = {
   data:
     | {
         user: {
-          id: string;
-          username: string;
           tokens: {
             accessToken: string;
             refreshToken: string;
@@ -21,24 +18,17 @@ type Data = {
     | null
     | undefined;
 };
-const toMySQLTimestamp = (date: Date): string => {
-  return date.toISOString().slice(0, 19).replace("T", " ");
-};
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
-  const snowflake = new Snowflake().getUniqueID();
   const raw_payload = req.body;
-  const payload: UserType = {
-    id: snowflake,
-    username: raw_payload.username,
-    email: raw_payload.email,
+
+  const payload = {
+    username: raw_payload.username || "",
+    email: raw_payload.email || "",
     password: raw_payload.password,
-    profilePicture: raw_payload.profilePicture,
-    status: "online",
-    createdAt: toMySQLTimestamp(new Date()),
   };
 
   // Validate the payload inputs for dangerous or invalid keys
@@ -82,7 +72,13 @@ export default async function handler(
   }
 
   let userData;
-  console.log(payload);
+  if ((!payload.username && !payload.email) || !payload.password) {
+    return res.status(400).json({
+      code: "failure",
+      message: "Missing required fields",
+      data: null,
+    });
+  }
   try {
     userData = await (await Database.init()).create(new UserModel(), payload);
     if (typeof userData === "string") {
@@ -103,8 +99,6 @@ export default async function handler(
   const tokens = await Tokeniser.generateBatch(payload);
   const data = {
     user: {
-      id: payload.id.toString(),
-      username: payload.username as string,
       tokens: {
         accessToken: tokens.accessToken as string,
         refreshToken: tokens.refreshToken as string,
@@ -113,7 +107,7 @@ export default async function handler(
   };
   res.status(200).json({
     code: "success",
-    message: `Successfully created a User and tokens.`,
+    message: `Authentication successful for ${payload.username}`,
     data,
   });
 }
