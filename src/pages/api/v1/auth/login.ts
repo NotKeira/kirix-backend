@@ -71,31 +71,7 @@ export default async function handler(
     }
   }
 
-  let userData;
-  if ((!payload.username && !payload.email) || !payload.password) {
-    return res.status(400).json({
-      code: "failure",
-      message: "Missing required fields",
-      data: null,
-    });
-  }
-  try {
-    userData = await (await Database.init()).create(new UserModel(), payload);
-    if (typeof userData === "string") {
-      return res.status(400).json({
-        code: "failure",
-        message: userData,
-        data: null,
-      });
-    }
-  } catch (error) {
-    return res.status(500).json({
-      code: "failure",
-      message: "Internal Server Error",
-      data: null,
-    });
-  }
-
+  
   const tokens = await Tokeniser.generateBatch(payload);
   const data = {
     user: {

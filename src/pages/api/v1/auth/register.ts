@@ -4,6 +4,7 @@ import { Tokeniser } from "@/utils/core/auth/token/Generator";
 import Database from "@/utils/db/core/Database";
 import { UserModel, UserType } from "@/utils/db/core/types/User.model";
 import { StringValidator } from "@/utils/core/server/validation";
+import { DataBuilder } from "@/utils/core/server/specs/PrepareData";
 type Data = {
   code: string;
   message: string;
@@ -36,7 +37,7 @@ export default async function handler(
     username: raw_payload.username,
     email: raw_payload.email,
     password: raw_payload.password,
-    profilePicture: raw_payload.profilePicture,
+    profilePicture: raw_payload.profilePicture || "default-profile.png",
     status: "online",
     createdAt: toMySQLTimestamp(new Date()),
   };
@@ -82,17 +83,27 @@ export default async function handler(
   }
 
   let userData;
-  console.log(payload);
   try {
-    userData = await (await Database.init()).create(new UserModel(), payload);
+    const hashableData = await new DataBuilder().run(new UserModel(), payload);
+    if (typeof hashableData === "string") {
+      return res.status(400).json({
+        code: "failure",
+        message: hashableData,
+        data: null,
+      });
+    }
+    userData = await (
+      await Database.init()
+    ).create(new UserModel(), hashableData);
     if (typeof userData === "string") {
       return res.status(400).json({
         code: "failure",
-        message: userData,
+        message: userData as string | string,
         data: null,
       });
     }
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       code: "failure",
       message: "Internal Server Error",

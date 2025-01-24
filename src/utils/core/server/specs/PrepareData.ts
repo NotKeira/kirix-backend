@@ -1,22 +1,24 @@
 import { BaseModel } from "@/utils/db/core/types";
-import { BaseService, UserModelService } from "./Data";
-import { UserModel } from "@/utils/db/core/types/User.model";
+import { BaseService, UserModelService } from "./data";
+import { UserModel, UserType } from "@/utils/db/core/types/User.model";
 
-export class PrepareData {
+export class DataBuilder {
   private getService(model: BaseModel): BaseService {
-    switch (model) {
-      case new UserModel():
-        return new UserModelService();
-      default:
-        throw new Error("Model not found");
+    if (model instanceof UserModel) {
+      return new UserModelService();
+    } else {
+      throw new Error("Service or Model not found.");
     }
   }
 
-  async run(model: BaseModel, data: Record<string, any>): Promise<void> {
+  async run(
+    model: BaseModel,
+    data: Record<string, any>
+  ): Promise<void | any | Record<string, any>> {
     const service = this.getService(model);
     if (!service) {
       throw new Error("Service not found");
     }
-    await service.execute(data);
+    return await service.execute(data);
   }
 }

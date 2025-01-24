@@ -4,7 +4,13 @@ import { UserModel } from "@/utils/db/core/types/User.model";
 import Database from "@/utils/db/core/Database";
 
 export class UserModelService extends BaseService {
-  public async execute(data: Record<string, any>): Promise<any> {
+  public async execute(
+    data: Record<string, any>
+  ): Promise<any | Record<string, any>> {
+    const hashableData: Record<string, any> = {};
+    hashableData.id = data.id;
+    hashableData.username = data.username;
+
     const model = new UserModel();
     const checks = { email: data.email, username: data.username };
     const duplicateFields: string[] = [];
@@ -22,12 +28,14 @@ export class UserModelService extends BaseService {
     }
 
     try {
-      data.password = await hashPassword(data.password);
+      hashableData.password = await hashPassword(data.password);
+      hashableData.email = await hashPassword(data.email);
     } catch (error) {
-      console.error("Error during password encryption:", error);
+      console.error("Error during encryption:", error);
       return "Error: Unable to create user. Try again later.";
     }
 
-    return data;
+    console.log(hashableData);
+    return hashableData;
   }
 }

@@ -4,6 +4,8 @@ import { Create, Read, Update, Delete } from "./operations";
 import { BaseModel } from "./types";
 import { hash, Options, verify } from "argon2";
 import { hashPassword } from "./utils/password";
+import { UserModel } from "./types/User.model";
+import { StringValidator } from "@/utils/core/server/validation";
 
 class Database {
   private static connection: any;
@@ -79,6 +81,30 @@ class Database {
       throw error;
     }
   }
+
+  public static locate = class {
+    public static async User() {
+      return {
+        byUsernameOrEmail: async (identifier: string) => {
+          if (!identifier) {
+            throw new Error("Identifier not provided.");
+          } else {
+            if (StringValidator.isEmail(identifier)) {
+              const user = await Database.read(new UserModel(), {
+                email: identifier,
+              });
+              return user;
+            } else {
+              const user = await Database.read(new UserModel(), {
+                username: identifier,
+              });
+              return user;
+            }
+          }
+        },
+      };
+    }
+  };
 }
 
 export default Database;

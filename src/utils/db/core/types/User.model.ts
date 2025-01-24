@@ -18,7 +18,7 @@ export interface UserType {
   createdAt: number | BigInt | Date | string;
 }
 
-export class UserModel implements BaseModel {
+export class UserModel implements BaseModel  {
   public tableName = "users";
   public columns = [
     "id",
